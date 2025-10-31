@@ -18,12 +18,15 @@ A quick reference for Git commands for version control and collaboration.
 
 | Task | Command |
 |------|---------|
-| List branches | `git branch` |
+| List local branches | `git branch` |
+| List remote branches | `git branch -r` |
 | Switch to branch | `git switch <branch>` or `git checkout <branch>` |
 | Create a new branch | `git branch <new_branch>` |
 | Create & switch to branch | `git checkout -b <new_branch>` |
 | Delete a branch | `git branch -d <branch>` |
 | Fetch all branches from remote | `git fetch origin` |
+| Create local branch tracking remote | `git checkout -b <branch> origin/<branch>` |
+| Shortcut: switch to remote branch directly | `git switch -t origin/<branch>` |
 
 ---
 
@@ -45,8 +48,9 @@ A quick reference for Git commands for version control and collaboration.
 | Task | Command |
 |------|---------|
 | Push branch to remote | `git push origin <branch>` |
+| First-time push (set upstream) | `git push --set-upstream origin <branch>` |
 | Pull latest changes | `git pull origin <branch>` |
-| Set upstream for a branch | `git push --set-upstream origin <branch>` |
+| Fetch latest from remote | `git fetch` |
 
 ---
 
@@ -67,7 +71,6 @@ A quick reference for Git commands for version control and collaboration.
 |------|---------|
 | Show changes | `git diff` |
 | Show staged changes | `git diff --staged` |
-| Show remote branches | `git branch -r` |
 | Show commit details | `git show <commit_hash>` |
 
 ---
@@ -76,7 +79,6 @@ A quick reference for Git commands for version control and collaboration.
 
 | Task | Command |
 |------|---------|
-| Fetch latest from remote | `git fetch` |
 | Merge branch | `git merge <branch>` |
 | Rebase branch | `git rebase <branch>` |
 | Resolve merge conflicts | Edit files → `git add <file>` → `git commit` |
@@ -88,7 +90,7 @@ A quick reference for Git commands for version control and collaboration.
 - Use `git log --oneline --graph --all --decorate` for a visual branch history  
 - Use `git status` often to avoid surprises  
 - Comment commits clearly for teamwork  
-
----
-
-*Saved as `git_cheatsheet.md` for quick reference.*
+- When a remote branch exists but not locally:
+  1. `git fetch origin`
+  2. `git checkout -b <branch> origin/<branch>`  
+  3. Or use shortcut: `git switch -t origin/<branch>`
