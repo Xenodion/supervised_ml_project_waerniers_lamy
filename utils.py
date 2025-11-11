@@ -1,25 +1,14 @@
-import pandas as pd
+# utils.py imports
+import os
+import time
+import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
-import time
-from tqdm import tqdm
 from scipy.stats import chi2_contingency
-from sklearn.model_selection import train_test_split, KFold, cross_validate
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.model_selection import KFold, cross_validate, GridSearchCV
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.metrics import make_scorer, precision_score, recall_score, f1_score, accuracy_score
-from sklearn.linear_model import LogisticRegression
-from xgboost import XGBClassifier
-from catboost import CatBoostClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.model_selection import GridSearchCV
-import joblib
 
 def compare_distributions(df1, df2, n_bins):
     """
@@ -120,6 +109,11 @@ def cramers_v(x, y):
     n = confusion_matrix.sum().sum()
     r, k = confusion_matrix.shape
     return np.sqrt((chi2 / n) / (min(k-1, r-1)))
+
+
+def bool_contact(X: pd.DataFrame):
+    X.contact.map({"cellular": 0, "telephone":1})
+    return X
 
 
 def train_k_fold(X_train: pd.DataFrame,
