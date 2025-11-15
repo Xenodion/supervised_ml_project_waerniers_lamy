@@ -9,6 +9,8 @@ import seaborn as sns
 from scipy.stats import chi2_contingency
 from sklearn.model_selection import KFold, cross_validate, GridSearchCV, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
+
 
 def psi(expected, actual, n_bins):
     """
@@ -138,123 +140,6 @@ def bool_contact(X: pd.DataFrame):
     X.contact.map({"cellular": 0, "telephone":1})
     return X
 
-def train_k_fold(X_train: pd.DataFrame,
-                y_train: pd.Series,
-                pipeline: Pipeline,
-                n_folds: int,
-                model_name: str,
-                param_grids: dict,
-                scoring_metrics: dict,
-                refit_metric: str,
-                logs: pd.DataFrame,
-                pipelines_dir: str = "saved_pipelines"):
-
-    # Create directories if needed
-    os.makedirs(pipelines_dir, exist_ok=True)
-
-    cross_val = KFold(n_splits=n_folds, shuffle=True, random_state=777)
-    # cross_val = TimeSeriesSplit(n_splits=n_folds)
-    results_list = []
-
-    grid_params = param_grids.get(model_name, None)
-    grid_use = bool(grid_params)
-    start_time = time.time()
-
-    # Kfold with gridsearch
-    if grid_use:
-        grid = GridSearchCV(
-            estimator=pipeline,
-            param_grid=grid_params,
-            scoring=scoring_metrics,
-            cv=cross_val,
-            refit=refit_metric,
-            n_jobs=-1
-        )
-        grid.fit(X_train, y_train)
-
-        estimator_pipeline = grid.best_estimator_
-        parameters = grid.best_params_
-
-        # Extract best metrics
-        best_index = grid.best_index_
-        precision_mean = grid.cv_results_["mean_test_precision"][best_index]
-        precision_std = grid.cv_results_["std_test_precision"][best_index]
-        recall_mean = grid.cv_results_["mean_test_recall"][best_index]
-        recall_std = grid.cv_results_["std_test_recall"][best_index]
-        f1_mean = grid.cv_results_["mean_test_f1"][best_index]
-        f1_std = grid.cv_results_["std_test_f1"][best_index]
-        accuracy_mean = grid.cv_results_["mean_test_accuracy"][best_index]
-        accuracy_std = grid.cv_results_["std_test_accuracy"][best_index]
-
-    # Classic Kfold without gridsearch
-    else:
-        cv_results = cross_validate(
-            pipeline,
-            X_train,
-            y_train,
-            cv=cross_val,
-            scoring=scoring_metrics,
-            return_train_score=False
-        )
-
-        # Compute mean/std metrics
-        precision_mean = cv_results['test_precision'].mean()
-        precision_std = cv_results['test_precision'].std()
-        recall_mean = cv_results['test_recall'].mean()
-        recall_std = cv_results['test_recall'].std()
-        f1_mean = cv_results['test_f1'].mean()
-        f1_std = cv_results['test_f1'].std()
-        accuracy_mean = cv_results['test_accuracy'].mean()
-        accuracy_std = cv_results['test_accuracy'].std()
-
-        # Refit pipeline on ALL training data - Very important to get the best model out of the X-val
-        estimator_pipeline = pipeline.fit(X_train, y_train)
-        parameters = estimator_pipeline.named_steps['classifier'].get_params()
-
-    compute_time = time.time() - start_time
-
-    # Save final pipeline
-    timestamp = int(time.time())
-    pipeline_filename = f"{model_name.replace(' ', '_')}_pipeline_{timestamp}.pkl"
-    pipeline_path = os.path.join(pipelines_dir, pipeline_filename)
-    joblib.dump(estimator_pipeline, pipeline_path)
-
-    train_results = {
-        'Model': model_name,
-        'Folds': n_folds,
-        'Grid_search': grid_use,
-        'Precision_mean': precision_mean,
-        'Precision_std': precision_std,
-        'Recall_mean': recall_mean,
-        'Recall_std': recall_std,
-        'F1_mean': f1_mean,
-        'F1_std': f1_std,
-        'Accuracy_mean': accuracy_mean,
-        'Accuracy_std': accuracy_std,
-        'Time': compute_time,
-        'Pipeline_file': pipeline_path,
-    }
-
-    results_list.append(train_results)
-
-    # Train summary
-    print(f"\nModel: {model_name}")
-    print(f"Grid Search: {grid_use}")
-    print(f"Precision: {precision_mean:.4f} ± {precision_std:.4f}")
-    print(f"Recall   : {recall_mean:.4f} ± {recall_std:.4f}")
-    print(f"F1       : {f1_mean:.4f} ± {f1_std:.4f}")
-    print(f"Accuracy : {accuracy_mean:.4f} ± {accuracy_std:.4f}")
-    print(f"Time     : {compute_time:.2f}s")
-    print(f"Pipeline saved at: {pipeline_path}")
-    print("\n" + "#" * 70 + "\n")
-
-    # Update logs
-    logs = pd.concat([logs, pd.DataFrame(results_list)], ignore_index=True)
-    logs.to_csv(os.path.join(os.getcwd(), 'data', 'logs.csv'), index=False)
-
-    return logs
-
-
 def train_ts(X_train: pd.DataFrame,
             y_train: pd.Series,
             pipeline: Pipeline,
@@ -271,11 +156,11 @@ def train_ts(X_train: pd.DataFrame,
 
     cross_val = TimeSeriesSplit(n_splits=n_folds)
 
-    # for i, (train_idx, test_idx) in enumerate(cross_val.split(X_train)):
-    #     y_test_fold = y_train.iloc[test_idx]
-    #     print(f"Fold {i}: {np.bincount(y_test_fold)}")
-
     results_list = []
+    accuracy_list = []
+    precision_list = []
+    recall_list = []
+    f1_list = []
 
     grid_params = param_grids.get(model_name, None)
     grid_use = bool(grid_params)
@@ -293,54 +178,50 @@ def train_ts(X_train: pd.DataFrame,
     grid.fit(X_train, y_train)
 
     estimator_pipeline = grid.best_estimator_
-    parameters = grid.best_params_
-
-
-    # print("\n" + "="*70)
-    # print("PREDICTION ANALYSIS")
-    # print("="*70)
-    
-    # # Get predictions on the entire training set
-    # y_train_pred = estimator_pipeline.predict(X_train)
-    
-    # print(f"\nActual class distribution in training set:")
-    # print(f"Class 0: {np.sum(y_train == 0)} ({np.sum(y_train == 0)/len(y_train)*100:.2f}%)")
-    # print(f"Class 1: {np.sum(y_train == 1)} ({np.sum(y_train == 1)/len(y_train)*100:.2f}%)")
-    
-    # print(f"\nPredicted class distribution:")
-    # print(f"Class 0: {np.sum(y_train_pred == 0)} ({np.sum(y_train_pred == 0)/len(y_train_pred)*100:.2f}%)")
-    # print(f"Class 1: {np.sum(y_train_pred == 1)} ({np.sum(y_train_pred == 1)/len(y_train_pred)*100:.2f}%)")
-    
-    # # Show predictions per fold
-    # print("\nPredictions per fold:")
-    # for i, (train_idx, test_idx) in enumerate(cross_val.split(X_train)):
-    #     X_fold = X_train.iloc[test_idx]
-    #     y_fold_true = y_train.iloc[test_idx]
-    #     y_fold_pred = estimator_pipeline.predict(X_fold)
         
-    #     print(f"\nFold {i}:")
-    #     print(f"  True:      {np.bincount(y_fold_true)}")
-    #     print(f"  Predicted: {np.bincount(y_fold_pred)}")
+    # Show predictions per fold
+    print("\nPredictions per fold:")
+    for i, (train_idx, val_idx) in enumerate(cross_val.split(X_train)):
+        X_fold = X_train.iloc[val_idx]
+        y_fold_true = y_train.iloc[val_idx]
+        y_fold_pred = estimator_pipeline.predict(X_fold)
         
-    #     # Check if model predicts only one class
-    #     unique_preds = np.unique(y_fold_pred)
-    #     if len(unique_preds) == 1:
-    #         print(f"  ⚠️  WARNING: Model predicts ONLY class {unique_preds[0]}!")
+        print(f"\nFold {i}:")
+        print(f"  Class:     [0 1]")
+        print(f"  True:      {np.bincount(y_fold_true)}")
+        print(f"  Predicted: {np.bincount(y_fold_pred)}")
+
+        # Metrics for this fold
+        acc = accuracy_score(y_fold_true, y_fold_pred)
+        prec = precision_score(y_fold_true, y_fold_pred, zero_division=0)
+        rec = recall_score(y_fold_true, y_fold_pred, zero_division=0)
+        f1 = f1_score(y_fold_true, y_fold_pred, zero_division=0)
+
+        # Store metrics
+        accuracy_list.append(acc)
+        precision_list.append(prec)
+        recall_list.append(rec)
+        f1_list.append(f1)
+        
+        print(f"  Accuracy:  {acc:.4f}")
+        print(f"  Precision: {prec:.4f}")
+        print(f"  Recall:    {rec:.4f}")
+        print(f"  F1-score:  {f1:.4f}")
+        
+        # Check if model predicts only one class
+        unique_preds = np.unique(y_fold_pred)
+        if len(unique_preds) == 1:
+            print(f"WARNING: Model predicts ONLY class {unique_preds[0]}!")
     
-    # print("="*70 + "\n")
-
-
     # Extract best metrics
-    best_index = grid.best_index_
-    precision_mean = grid.cv_results_["mean_test_precision"][best_index]
-    precision_std = grid.cv_results_["std_test_precision"][best_index]
-    recall_mean = grid.cv_results_["mean_test_recall"][best_index]
-    recall_std = grid.cv_results_["std_test_recall"][best_index]
-    f1_mean = grid.cv_results_["mean_test_f1"][best_index]
-    f1_std = grid.cv_results_["std_test_f1"][best_index]
-    accuracy_mean = grid.cv_results_["mean_test_accuracy"][best_index]
-    accuracy_std = grid.cv_results_["std_test_accuracy"][best_index]
-
+    precision_mean = np.mean(precision_list)
+    precision_std = np.std(precision_list)
+    recall_mean = np.mean(recall_list)
+    recall_std = np.std(recall_list)
+    f1_mean = np.mean(f1_list)
+    f1_std = np.std(f1_list)
+    accuracy_mean = np.mean(accuracy_list)
+    accuracy_std = np.std(accuracy_list)
     compute_time = time.time() - start_time
 
     # Save final pipeline
@@ -370,16 +251,16 @@ def train_ts(X_train: pd.DataFrame,
     # Train summary
     print(f"\nModel: {model_name}")
     print(f"Grid Search: {grid_use}")
+    print(f"Accuracy : {accuracy_mean:.4f} ± {accuracy_std:.4f}")
     print(f"Precision: {precision_mean:.4f} ± {precision_std:.4f}")
     print(f"Recall   : {recall_mean:.4f} ± {recall_std:.4f}")
     print(f"F1       : {f1_mean:.4f} ± {f1_std:.4f}")
-    print(f"Accuracy : {accuracy_mean:.4f} ± {accuracy_std:.4f}")
     print(f"Time     : {compute_time:.2f}s")
     print(f"Pipeline saved at: {pipeline_path}")
     print("\n" + "#" * 70 + "\n")
 
     # Update logs
     logs = pd.concat([logs, pd.DataFrame(results_list)], ignore_index=True)
-    logs.to_csv(os.path.join(os.getcwd(), 'data', 'logs.csv'), index=False)
+    logs.to_csv(os.path.join(os.getcwd(), 'data', 'train_logs.csv'), index=False)
 
     return logs
