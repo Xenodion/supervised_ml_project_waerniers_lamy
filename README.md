@@ -130,19 +130,22 @@ Model performance is evaluated using multiple metrics:
 
 Best performing model: **Random Forest**
 - Training
-    - F1-Score: 0.6942 ± 0.1715
-    - Precision: 0.7885 ± 0.0238
-    - Recall: 0.6674 ± 0.0262
-    - Accuracy: 0.7906 ± 0.0455
+    - F1-Score: 0.6844 ± 0.1510
+    - Precision: 0.7847 ± 0.0242
+    - Recall: 0.6513 ± 0.0244
+    - Accuracy: 0.7785 ± 0.0329
 
 - Test
-    - F1-Score: 0.7130
-    - Precision: 0.6609
-    - Recall: 0.7741
-    - Accuracy: 0.6888
+    - Accuracy : 0.694
+    - Precision: 0.667
+    - Recall   : 0.776
+    - F1 score : 0.717
 
 All training results are logged in `data/train_logs.csv` with complete training metadata.
+
 All testing results are logged in `data/test_logs.csv`.
+
+Best model pipeline : `saved_pipelines\Random_Forest_pipeline_1763550779.pkl`
 
 ## 💻 Usage
 
