@@ -64,7 +64,6 @@ logs.to_csv(os.path.join(os.getcwd(), 'data', 'test_logs.csv'), index=False)
 cm = confusion_matrix(y_test, y_pred)
 disp = ConfusionMatrixDisplay(confusion_matrix=cm)
 disp.plot()
-# plt.show()
 
 # Extract components
 preprocess = pipeline.named_steps['preprocessor']
@@ -84,7 +83,6 @@ plt.ylabel("Feature")
 plt.title("Feature Importance from Random Forest")
 plt.gca().invert_yaxis()
 plt.tight_layout()
-# plt.show()
 
 # Compute ROC curve
 fpr, tpr, thresholds = roc_curve(y_test, y_proba)
