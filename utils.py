@@ -180,16 +180,16 @@ def train_ts(X_train: pd.DataFrame,
     estimator_pipeline = grid.best_estimator_
         
     # Show predictions per fold
-    print("\nPredictions per fold:")
+    # print("\nPredictions per fold:")
     for i, (train_idx, val_idx) in enumerate(cross_val.split(X_train)):
         X_fold = X_train.iloc[val_idx]
         y_fold_true = y_train.iloc[val_idx]
         y_fold_pred = estimator_pipeline.predict(X_fold)
         
-        print(f"\nFold {i}:")
-        print(f"  Class:     [0 1]")
-        print(f"  True:      {np.bincount(y_fold_true)}")
-        print(f"  Predicted: {np.bincount(y_fold_pred)}")
+        # print(f"\nFold {i}:")
+        # print(f"  Class:     [0 1]")
+        # print(f"  True:      {np.bincount(y_fold_true)}")
+        # print(f"  Predicted: {np.bincount(y_fold_pred)}")
 
         # Metrics for this fold
         acc = accuracy_score(y_fold_true, y_fold_pred)
@@ -203,10 +203,10 @@ def train_ts(X_train: pd.DataFrame,
         recall_list.append(rec)
         f1_list.append(f1)
         
-        print(f"  Accuracy:  {acc:.4f}")
-        print(f"  Precision: {prec:.4f}")
-        print(f"  Recall:    {rec:.4f}")
-        print(f"  F1-score:  {f1:.4f}")
+        # print(f"  Accuracy:  {acc:.4f}")
+        # print(f"  Precision: {prec:.4f}")
+        # print(f"  Recall:    {rec:.4f}")
+        # print(f"  F1-score:  {f1:.4f}")
         
         # Check if model predicts only one class
         unique_preds = np.unique(y_fold_pred)
@@ -264,3 +264,9 @@ def train_ts(X_train: pd.DataFrame,
     logs.to_csv(os.path.join(os.getcwd(), 'data', 'train_logs.csv'), index=False)
 
     return logs
+
+
+def modify_pdays(X: pd.DataFrame):
+    df = X.copy()
+    df.loc[df.pdays == 999, "pdays"] = 0
+    return df

@@ -46,8 +46,12 @@ cd supervised_ml_project_waerniers_lamy
 
 2. **Create a virtual environment (recommended):**
 ```bash
-python -m venv env_ml
-source env_ml/bin/activate  # On Windows: env_ml\Scripts\activate
+python -m venv .venv
+source .venv/Scripts/activate   # Windows Git Bash
+# OR
+.\.venv\Scripts\activate       # Windows CMD
+# OR
+source .venv/bin/activate      # Linux/macOS
 ```
 
 3. **Install dependencies:**
@@ -77,7 +81,7 @@ supervised_ml_project_waerniers_lamy/
 │
 ├── 1_eda.ipynb                     # Data visualization notebook
 ├── 2_training.ipynb                # Training notebook
-├── 3_testing.ipynb                 # Testing notebook
+├── main.py                         # Testing py file
 ├── utils.py                        # Utility functions
 ├── requirements.txt                # Project dependencies
 └── README.md                       # Project documentation
@@ -116,7 +120,7 @@ We implemented and compared multiple classification algorithms:
 - Custom parameter grids for each model
 
 ### 6. **Experiment Tracking**
-- Automated logging of all experiments to `data/logs.csv`
+- Automated logging of all experiments to `data/train_logs.csv` and `data/test_logs.csv`
 - Pipeline persistence using joblib
 - Reproducible results with saved configurations
 
@@ -130,19 +134,22 @@ Model performance is evaluated using multiple metrics:
 
 Best performing model: **Random Forest**
 - Training
-    - F1-Score: 0.6942 ± 0.1715
-    - Precision: 0.7885 ± 0.0238
-    - Recall: 0.6674 ± 0.0262
-    - Accuracy: 0.7906 ± 0.0455
+    - F1-Score: 0.6844 ± 0.1510
+    - Precision: 0.7847 ± 0.0242
+    - Recall: 0.6513 ± 0.0244
+    - Accuracy: 0.7785 ± 0.0329
 
 - Test
-    - F1-Score: 0.7130
-    - Precision: 0.6609
-    - Recall: 0.7741
-    - Accuracy: 0.6888
+    - Accuracy : 0.694
+    - Precision: 0.667
+    - Recall   : 0.776
+    - F1 score : 0.717
 
 All training results are logged in `data/train_logs.csv` with complete training metadata.
+
 All testing results are logged in `data/test_logs.csv`.
+
+Best model pipeline : `saved_pipelines\Random_Forest_pipeline_1763550779.pkl`
 
 ## 💻 Usage
 
@@ -163,7 +170,7 @@ The notebook includes:
 
 Open and run the testing notebook:
 ```bash
-jupyter notebook 3_testing.ipynb
+python main.py
 ```
 
 The testing notebook automatically:
@@ -171,7 +178,7 @@ The testing notebook automatically:
 2. Loads the best trained pipeline
 3. Makes predictions on unseen data
 4. Displays performance metrics (Accuracy, Precision, Recall, F1-Score)
-5. Plots confusion matrix for result visualization
+5. Plots confusion matrix for result visualization, ROC AUC curve and feature importances
 
 ## 🛠️ Custom Utilities
 
